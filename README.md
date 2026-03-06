@@ -1,14 +1,85 @@
 # Flow2API Host Agent
 
-> Linux host-side companion service for Flow2API: browser login, token auto-refresh, Web UI, and systemd support.
+> Flow2API 的 Linux 宿主机伴生服务：浏览器登录、Token 自动刷新、Web UI 与 systemd 常驻支持。
 
 一个运行在 **Linux 宿主机** 上的独立 companion service，用来把 Google Labs / Flow 的登录态稳定同步回 **已有的 Flow2API** 实例。
 
-它适合：
+适合这些场景：
 - 你已经部署好了 `flow2api`
 - 你不想依赖 Chrome 扩展
 - 你希望在服务器上自动刷新 token
 - 你需要 Web UI / systemd / 定时维护能力
+
+---
+
+## 界面预览
+
+### 仪表盘
+
+![Dashboard](assets/dashboard.png)
+
+### 登录向导
+
+![Login Guide](assets/login-guide.png)
+
+---
+
+## 3 分钟上手
+
+### 1. 克隆仓库
+
+```bash
+git clone https://github.com/muyouzhi6/flow2api-host-agent.git
+cd flow2api-host-agent
+```
+
+### 2. 安装 systemd 服务
+
+```bash
+bash install-systemd.sh
+```
+
+### 3. 配置 `agent.toml`
+
+```bash
+cp agent.example.toml agent.toml
+nano agent.toml
+```
+
+最关键的几项：
+
+```toml
+flow2api_url = "http://127.0.0.1:38000"
+connection_token = "从 Flow2API 管理后台复制"
+novnc_url = "http://你的服务器IP:6080/vnc.html?autoconnect=true&resize=scale&quality=6"
+listen_host = "0.0.0.0"
+listen_port = 38110
+```
+
+### 4. 打开登录向导
+
+```bash
+systemctl start flow2api-host-agent-browser
+systemctl start flow2api-host-agent-ui
+```
+
+然后访问：
+
+```text
+http://你的服务器IP:38110/login
+```
+
+### 5. 登录 Google Labs 并手动刷新一次
+
+- 在登录向导页面中完成 Google 登录
+- 回到仪表盘点击 **立即刷新 Token**
+- 看到成功即可
+
+### 6. 启动自动刷新 daemon
+
+```bash
+systemctl start flow2api-host-agent
+```
 
 ---
 
@@ -36,51 +107,6 @@
 
 ---
 
-## 适用前提
-
-你需要先有：
-
-1. **一台 Linux 服务器**
-2. **已部署好的 Flow2API**
-3. **Google Chrome**
-4. **Xvfb / noVNC**（用于服务器上的浏览器登录）
-
----
-
-## 快速开始
-
-### 1. 克隆仓库
-
-```bash
-git clone https://github.com/muyouzhi6/flow2api-host-agent.git
-cd flow2api-host-agent
-```
-
-### 2. 安装 systemd 服务
-
-```bash
-bash install-systemd.sh
-```
-
-### 3. 编辑配置
-
-```bash
-cp agent.example.toml agent.toml
-nano agent.toml
-```
-
-重点填写：
-
-```toml
-flow2api_url = "http://127.0.0.1:38000"
-connection_token = "从 Flow2API 管理后台复制"
-novnc_url = "http://你的服务器IP:6080/vnc.html?autoconnect=true&resize=scale&quality=6"
-listen_host = "0.0.0.0"
-listen_port = 38110
-```
-
----
-
 ## Connection Token 怎么获取？
 
 打开你的 Flow2API 管理后台：
@@ -98,57 +124,12 @@ listen_port = 38110
 
 ---
 
-## 首次登录流程
+## Web UI 页面说明
 
-### 1. 启动浏览器
-
-```bash
-systemctl start flow2api-host-agent-browser
-```
-
-### 2. 启动 Web UI
-
-```bash
-systemctl start flow2api-host-agent-ui
-```
-
-打开：
-
-```text
-http://你的服务器IP:38110/login
-```
-
-### 3. 在登录页中完成 Google 登录
-
-- 页面内会嵌入 noVNC
-- 直接在页面中操作服务器上的 Chrome
-- 登录与 Google Labs 一致的账号
-
-### 4. 手动触发一次刷新
-
-在 Web UI 仪表盘点击：
-
-- **立即刷新 Token**
-
-看到成功即可。
-
----
-
-## 自动运行
-
-### 启动 daemon
-
-```bash
-systemctl start flow2api-host-agent
-```
-
-### 开机自启
-
-安装脚本会自动 `enable`：
-
-- `flow2api-host-agent`
-- `flow2api-host-agent-ui`
-- `flow2api-host-agent-browser`
+- **仪表盘**：看最近一次刷新结果和当前状态
+- **登录向导**：首次使用 / 登录失效时用
+- **配置**：修改 Flow2API 地址、Connection Token、noVNC 地址等
+- **帮助 / 原理 / 稳定性**：解释它怎么工作、会不会越跑越重、为什么建议维护性重启
 
 ---
 
@@ -170,15 +151,6 @@ systemctl enable --now flow2api-host-agent-daily-restart.timer
 - ui
 
 这是一个偏稳妥的长期运行策略。
-
----
-
-## Web UI 页面说明
-
-- **仪表盘**：看最近一次刷新结果和当前状态
-- **登录向导**：首次使用 / 登录失效时用
-- **配置**：修改 Flow2API 地址、Connection Token、noVNC 地址等
-- **帮助 / 原理 / 稳定性**：解释它怎么工作、会不会越跑越重、为什么建议维护性重启
 
 ---
 
@@ -207,6 +179,17 @@ novnc_url = "http://你的服务器IP:6080/vnc.html?autoconnect=true&resize=scal
 - 大头是 Chrome / renderer / GPU 相关进程
 
 所以如果长期运行，建议保留每日维护性重启方案。
+
+---
+
+## 适用前提
+
+你需要先有：
+
+1. **一台 Linux 服务器**
+2. **已部署好的 Flow2API**
+3. **Google Chrome**
+4. **Xvfb / noVNC**（用于服务器上的浏览器登录）
 
 ---
 
