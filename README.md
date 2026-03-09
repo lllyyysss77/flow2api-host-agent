@@ -16,7 +16,7 @@
 
 ### 仪表盘
 
-![Uploading PixPin_2026-03-09_15-22-15.png…]()
+<img width="1432" height="1248" alt="PixPin_2026-03-09_15-22-15" src="https://github.com/user-attachments/assets/34782e03-5d43-4519-bb8e-23a6bdf8ae8c" />
 
 
 ### 登录向导
