@@ -98,11 +98,13 @@ def index(request: Request):
 def login_page(request: Request):
     cfg, _state, status, _, _, _ = _get_context()
     novnc_url = cfg.get('novnc_url', DEFAULT_NOVNC)
+    health = _run_cmd('health')
     return templates.TemplateResponse('login.html', {
         'request': request,
         'cfg': cfg,
         'status': status,
         'novnc_url': novnc_url,
+        'health': health,
     })
 
 
